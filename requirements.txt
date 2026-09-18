@@ -1,0 +1,8 @@
+# Core (required)
+numpy>=1.22
+scipy>=1.8
+matplotlib>=3.5
+
+# Optional: only for the compiled Barnes-Hut scaling benchmark
+# (run_interaction_counts.py). Everything else runs without it.
+numba>=0.56

@@ -1,0 +1,21 @@
+hybrid_chemotaxis_repro/
+  README.md                   start here
+  requirements.txt            numpy, scipy, matplotlib (+ optional numba)
+  run_all.py                  master driver: --quick | --list | --only N
+
+  coupled_model.py            THE MODEL OF THE PAPER (particles + dynamic field)
+  hybrid_model.py             earlier static-field model (force benchmarks, comparison)
+  bh_numba.py                 compiled Barnes-Hut tree + cell list (scaling benchmark)
+  model3d.py                  three-dimensional variant
+
+  test_coupled.py             19 verification checks
+  run_grid_refine.py          field-solver convergence      -> results/grid_refine.json
+  run_dt_refine.py            particle time-step order      -> results/dt_refine.json
+  run_forceerr.py             force accuracy                -> results/forceerr.json
+  run_interaction_counts.py   O(N log N) counts (numba)     -> results/exp3_counts.npz
+  run_production.py           ablation + uptake sweep       -> results/production.json
+  make_fig_uptake.py          uptake figure                 -> figures/fig_uptake.*
+  run_exp3.py, run_exp5.py    legacy scaling / 3D drivers (static-field model)
+
+  results/                    created on first run
+  figures/                    created on first run
