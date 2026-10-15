@@ -249,19 +249,6 @@ for r in range(4):
         a.legend(loc="upper left", fontsize=7, framealpha=0.9,
                  handletextpad=0.2, borderpad=0.25)
 
-fig.suptitle(
-    "Experiment 2: aggregation regimes "
-    r"($N=500$, short-range repulsion active)",
-    fontsize=13,
-)
-
-pdf_path = os.path.join(FIGURES, "fig6_regimes.pdf")
-png_path = os.path.join(FIGURES, "fig6_regimes_final.png")
-
-fig.savefig(pdf_path, format="pdf")
-fig.savefig(png_path, format="png", dpi=160)
-
-plt.close(fig)
-
-print(f"saved: {pdf_path}")
-print(f"saved: {png_path}")
+fig.savefig(os.path.join(FIGURES, "fig6_regimes.pdf"))
+fig.savefig(os.path.join(FIGURES, "fig6_regimes.png"), dpi=160)
+print("saved fig6_regimes")

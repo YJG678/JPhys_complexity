@@ -1,13 +1,13 @@
 """Master driver: reproduces every computational result in the paper.
 
-    python run_all.py --quick     smoke test (~6 min, REDUCED settings)
+    python run_all.py --quick     smoke test (REDUCED settings, ~10 min)
     python run_all.py             full run   (~1-2 h at production settings)
     python run_all.py --list      list the stages and exit
-    python run_all.py --only 5 12 run selected stages only
+    python run_all.py --only 4 5  run selected stages only
 
 Outputs land in results/ (JSON, NPZ) and figures/ (PDF, PNG).
-Stage 12 checks every number quoted in Sections 7-8 against results/ and needs
-no simulation of its own; run it any time.
+The last stage checks every number quoted in Sections 7-8 against results/ and
+runs no simulation of its own; run it any time.
 
 --quick does NOT reproduce the published numbers and is not meant to. Use it to
 check the install, then drop the flag.
@@ -19,18 +19,22 @@ for d in ("results", "figures"):
 
 #      n, script,                      quick-args,  description,                              required
 STAGES = [
-    (1,  "test_coupled.py",            [],          "Verification suite (19 checks)",          True),
-    (2,  "run_grid_refine.py",         [],          "Field solver convergence (Tab.2, Fig.8ab)", True),
-    (3,  "run_dt_refine.py",           [],          "Particle time-step order (Tab.2, Fig.8c)", True),
-    (4,  "run_forceerr.py",            [],          "Force accuracy (Tab.2, Fig.7)",           True),
-    (5,  "run_meanfield.py",           ["--quick"], "Mean-field convergence (Tab.2, Fig.8d)",  True),
-    (6,  "run_interaction_counts.py",  [],          "Interaction counts (Tab.6) [numba]",      False),
-    (7,  "run_scaling_timing.py",      ["--quick"], "Wall-clock scaling (Tab.6, Fig.12) [numba]", False),
-    (8,  "run_exp5.py",                [],          "2D vs 3D (Sec.8.2, Fig.13)",              False),
-    (9,  "run_exp2.py",                [],          "Regime sweep (Fig.11)",                   False),
-    (10, "run_production.py",          ["--quick"], "Coupled ablation + uptake sweep (Tab.4-5)", True),
-    (11, "make_fig_uptake.py",         [],          "Uptake-sweep figure (Fig.10)",            True),
-    (12, "verify_paper_numbers.py",    [],          "Check paper numbers against results/",    True),
+    ( 1, "test_coupled.py",           [],          "Verification suite (19 checks)",             True),
+    ( 2, "run_grid_refine.py",        [],          "Field solver convergence (Tab.2, Fig.8ab)",  True),
+    ( 3, "run_dt_refine.py",          [],          "Particle time-step order (Tab.2, Fig.8c)",   True),
+    ( 4, "run_forceerr.py",           [],          "Force accuracy data (Tab.2, Fig.7)",         True),
+    ( 5, "make_fig_forceerr.py",      [],          "Force-accuracy figure (Fig.7)",              True),
+    ( 6, "run_meanfield.py",          [],          "Mean-field convergence (Tab.2, Fig.8d)",     True),
+    ( 7, "run_interaction_counts.py", [],          "Interaction counts (Tab.6) [numba]",         False),
+    ( 8, "run_scaling_timing.py",     [],          "Wall-clock scaling (Tab.6, Fig.12) [numba]", False),
+    ( 9, "run_exp5.py",               [],          "2D vs 3D data (Sec.8.2, Fig.13)",            False),
+    (10, "make_fig_exp5.py",          [],          "2D vs 3D figure (Fig.13)",                   False),
+    (11, "run_exp2.py",               [],          "Regime sweep + figure (Fig.11)",             False),
+    (12, "run_exp1.py",               [],          "Representative run, 4 scenarios (Fig.9)",    True),
+    (13, "make_fig_exp1.py",          [],          "Representative-run figure (Fig.9)",          True),
+    (14, "run_production.py",         [],          "Coupled ablation + uptake sweep (Tab.4-5)",  True),
+    (15, "make_fig_uptake.py",        [],          "Uptake-sweep figure (Fig.10)",               True),
+    (16, "verify_paper_numbers.py",   [],          "Check paper numbers against results/",       True),
 ]
 
 ap = argparse.ArgumentParser()

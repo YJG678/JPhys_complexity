@@ -6,7 +6,7 @@ uptake figure and which supplies Tables 4 and 5 of the paper.
 Usage:   python run_production.py            (full: ~12 min)
          python run_production.py --quick    (reduced: ~2 min, for smoke-testing)
 """
-import os, sys, json, time, argparse
+import os, sys, json, time, argparse, re
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 RESULTS = os.path.join(HERE, "results"); os.makedirs(RESULTS, exist_ok=True)
@@ -78,6 +78,40 @@ def agg(rows):
     return {k: [float(np.mean([r[k] for r in rows])),
                 float(np.std([r[k] for r in rows]))] for k in rows[0]}
 
+def save_production_json():
+    """Save production.json with Nc numbers displayed to three decimals."""
+    marker = "__RAW_JSON_NUMBER__"
+
+    def mark_nc(obj):
+        if isinstance(obj, dict):
+            out = {}
+            for k, v in obj.items():
+                if k == "Nc" and isinstance(v, list):
+                    out[k] = [
+                        f"{marker}{float(x):.3f}"
+                        for x in v
+                    ]
+                else:
+                    out[k] = mark_nc(v)
+            return out
+
+        if isinstance(obj, list):
+            return [mark_nc(x) for x in obj]
+
+        return obj
+
+    text = json.dumps(mark_nc(RES), indent=1)
+
+    # Convert marked strings back into JSON numeric literals.
+    text = re.sub(
+        r'"__RAW_JSON_NUMBER__(-?\d+\.\d+)"',
+        r'\1',
+        text
+    )
+
+    out_path = os.path.join(RESULTS, "production.json")
+    with open(out_path, "w", encoding="utf-8") as f:
+        f.write(text + "\n")
 
 t0 = time.time()
 RES = {"config": dict(N=N, nsteps=NSTEP, dt=BASE["dt"], quick=args.quick)}
@@ -106,7 +140,7 @@ for b in BETA_GRID:
     print(f"{b:>7.2f} | {a['Rc'][0]:>7.3f}+-{a['Rc'][1]:<6.3f} | "
           f"{a['A'][0]:>7.2f}+-{a['A'][1]:<6.2f} | {a['rho'][0]:>9.4f}", flush=True)
 RES["stage2_beta"] = {str(k): v for k, v in stage2.items()}
-json.dump(RES, open(os.path.join(RESULTS, "production.json"), "w"), indent=1)
+save_production_json()
 
 print(f"\nSTAGE 3  ablation at A_ell = {EL:.2f}", flush=True)
 print(f"{'scenario':>8} | {'Rhat_c':>15} | {'A':>15} | {'Nc':>5}", flush=True)
@@ -123,5 +157,5 @@ for name in ("full", "nomem", "norep", "noatt"):
     print(f"{name:>8} | {a['Rc'][0]:>7.3f}+-{a['Rc'][1]:<6.3f} | "
           f"{a['A'][0]:>7.2f}+-{a['A'][1]:<6.2f} | {a['Nc'][0]:>5.1f}", flush=True)
 RES["stage3_ablation"] = stage3
-json.dump(RES, open(os.path.join(RESULTS, "production.json"), "w"), indent=1)
+save_production_json()
 print(f"\nDONE in {time.time()-t0:.0f}s -> results/production.json", flush=True)

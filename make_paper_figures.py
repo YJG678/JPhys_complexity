@@ -73,7 +73,7 @@ def figure1():
     axc.bar(x, ag, yerr=age, color=ORANGE, alpha=0.9, capsize=4)
     axc.set_yscale("log"); axc.set_xticks(x); axc.set_xticklabels(labels)
     axc.set(ylabel="aggregation index", title="(F) Aggregation diagnostic")
-    fig.suptitle("Ablation of model mechanisms: each term is physically necessary",
+    fig.suptitle("Figure 1.  Ablation of model mechanisms: each term is physically necessary",
                  fontsize=13, fontweight="bold")
     fig.savefig(os.path.join(FIGURES, "fig_ablation_physics.pdf")); fig.savefig(os.path.join(FIGURES, "fig_ablation_physics.png"), dpi=150)
     plt.close(fig); print("saved Figure 1")
@@ -146,9 +146,11 @@ def figure2():
                f"$R_c={Rc[i,j]:.3f}$, agg $={Cl[i,j]:.1f}$")
         snapshot(ax, Xall[i, j], C0, f"{chr(68+r)}  {names[r]}", sub,
                  REGCOL[names[r]])
-    fig.suptitle("Emergent macroscopic regimes over the "
+    fig.suptitle("Figure 2.  Emergent macroscopic regimes over the "
                  r"$(\lambda_1,\epsilon_\ell)$ parameter space",
                  fontsize=13, fontweight="bold")
+    fig.savefig(os.path.join(FIGURES, "fig_macroscopic_regimes.pdf"))
+    fig.savefig(os.path.join(FIGURES, "fig_macroscopic_regimes.png"), dpi=150)
     plt.close(fig); print("saved Figure 2")
 
 
@@ -183,8 +185,6 @@ def figure3():
     ax[1, 1].loglog(Nm, em[0] * (Nm / Nm[0])**-0.5, "--", color="k", alpha=0.6, label=r"$\propto N^{-1/2}$")
     ax[1, 1].set(xlabel="number of particles $N$", ylabel="density fluctuation $E_N$",
                  title="(d) Mean-field convergence"); ax[1, 1].legend()
-    fig.suptitle("Mathematical verification: solver convergence and the "
-                 "mean-field limit", fontsize=13, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.96])
     fig.savefig(os.path.join(FIGURES, "fig_verification_meanfield.pdf")); fig.savefig(os.path.join(FIGURES, "fig_verification_meanfield.png"), dpi=150)
     plt.close(fig); print("saved Figure 3")
@@ -192,7 +192,18 @@ def figure3():
 
 # ============================ FIGURE 4 ============================
 def figure4():
-    """Wall-clock scaling and interaction counts."""
+    """Wall-clock scaling and interaction counts.
+
+    ONE data source.  Earlier versions of this figure took the direct-summation
+    curve from results/exp3_results.json (the uncompiled first-submission
+    campaign) while the cell-list and Barnes-Hut curves came from
+    results/exp3_numba.json (the compiled campaign), and then re-fitted the
+    exponents at plot time with a different window for each curve.  That is why
+    the legend, the table and verify_paper_numbers.py quoted three different
+    sets of exponents.  All three curves are now read from exp3_numba.json and
+    the exponents are the ones STORED in that file by run_scaling_timing.py, so
+    the legend cannot drift from the text.  The legacy file is used only if the
+    compiled campaign has no direct timings, and the legend says so."""
     nb = json.load(open(os.path.join(RESULTS, "exp3_numba.json")))
     cnts = np.load(os.path.join(RESULTS, "exp3_counts.npz"))
     Ns = np.array(nb["Ns"], float)
@@ -252,8 +263,6 @@ def figure4():
               ylabel="total accepted interactions",
               title=r"(b) Algorithmic complexity: $O(N\log N)$")
     ax[1].legend(fontsize=9)
-    fig.suptitle("Algorithmic scalability to one million particles",
-                 fontsize=13, fontweight="bold")
     fig.tight_layout(rect=[0, 0, 1, 0.95])
     fig.savefig(os.path.join(FIGURES, "fig_scalability.pdf"))
     fig.savefig(os.path.join(FIGURES, "fig_scalability.png"), dpi=150)

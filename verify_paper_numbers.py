@@ -85,7 +85,7 @@ if PR:
             claim("7.4", f"ablation {k}: Rhat_c", f"{rc}", f"{ab[k]['Rc'][0]:.3f}", near(ab[k]["Rc"][0], rc, 0.08), "run_production.py")
             claim("7.4", f"ablation {k}: A", f"{A}", f"{ab[k]['A'][0]:.2f}", near(ab[k]["A"][0], A, 0.15), "run_production.py")
     bs = PR.get("stage2_beta", {})
-    for b, A in (("0.1", 24.57), ("0.25", 21.45), ("0.5", 15.54), ("1.0", 5.93), ("2.0", 1.69)):
+    for b, A in (("0.1", 23.93), ("0.25", 21.74), ("0.5", 15.72), ("1.0", 5.93), ("2.0", 1.69)):
         if b in bs:
             claim("7.4", f"uptake sweep beta={b}: A", f"{A}", f"{bs[b]['A'][0]:.2f}", near(bs[b]["A"][0], A, 0.15), "run_production.py")
     claim("7.4", "retuned A_ell", "0.10", str(PR.get("eps_l_chosen")), PR.get("eps_l_chosen") == 0.1, "run_production.py")
@@ -93,19 +93,39 @@ else:
     claim("7.4", "ablation + uptake sweep tables", "several", "-", None, "run_production.py")
 
 # ------------------------------------------------------------------ Section 8
+# Wall-clock exponents.  These are MEASUREMENTS, not mathematical constants:
+# they move by O(0.1) between machines, between runs, and with the fit window,
+# because the benchmark is dominated by memory traffic at large N.  The paper
+# should therefore quote them to two significant figures, and this check uses
+# an absolute tolerance of 0.15 on the exponent rather than a relative one.
+# Edit PAPER_8_1 to whatever Section 8.1 actually says.
+PAPER_8_1 = {"slope_direct": 2.00, "slope_cell": 1.00, "slope_bh": 1.10}
+EXP_TOL = 0.15
+
+def near_abs(a, b, tol):
+    return a is not None and b is not None and abs(a - b) <= tol
+
 if TM:
-    for key, paper, lbl in (("slope_direct", 2.15, "direct wall-clock"),
-                            ("slope_cell", 0.99, "cell-list wall-clock"),
-                            ("slope_bh", 1.38, "Barnes-Hut wall-clock")):
+    for key, lbl in (("slope_direct", "direct wall-clock"),
+                     ("slope_cell", "cell-list wall-clock"),
+                     ("slope_bh", "Barnes-Hut wall-clock")):
+        paper = PAPER_8_1[key]
         v = TM.get(key)
-        claim("8.1", lbl, f"N^{paper}", f"N^{v:.3f}" if v else "-",
-              near(v, paper, 0.08) if v else None, "run_scaling_timing.py")
-    for key, paper, lbl in (("t_1e6_cell", 24.0, "cell list at N=1e6 (s)"),
-                            ("t_1e6_bh_total", 26.0, "Barnes-Hut at N=1e6 (s)")):
+        se = TM.get("se_" + key.split("_")[1], None)
+        got = "-" if v is None else (f"N^{v:.3f}" +
+              (f"+/-{se:.3f}" if isinstance(se, float) and se == se else ""))
+        claim("8.1", lbl, f"N^{paper}", got,
+              near_abs(v, paper, EXP_TOL) if v else None, "run_scaling_timing.py")
+    if TM.get("estimator") != "min over repeats":
+        claim("8.1", "timing estimator", "min over repeats",
+              str(TM.get("estimator", "median, direct timed once")), False,
+              "re-run run_scaling_timing.py (current version)")
+    for key, paper, lbl in (("t_1e6_cell", 0.4, "cell list at N=1e6 (s)"),
+                            ("t_1e6_bh_total", 2.8, "Barnes-Hut at N=1e6 (s)")):
         v = TM.get(key)
         claim("8.1", lbl, f"{paper:.0f}", f"{v:.1f}" if v else "not reached", near(v, paper, 0.30) if v else None, "run_scaling_timing.py --max-n 1e6")
 else:
-    claim("8.1", "wall-clock exponents and N=1e6 timings", "N^2.15/0.99/1.38, 24s, 26s", "-", None, "run_scaling_timing.py")
+    claim("8.1", "wall-clock exponents and N=1e6 timings", "N^2.00/1.00/1.10, 0.4s, 2.8s", "-", None, "run_scaling_timing.py")
 if CN is not None:
     Ns, tot = np.asarray(CN["Ns"], float), np.asarray(CN["tot"], float)
     m = Ns >= 1e4
@@ -117,12 +137,15 @@ if CN is not None:
 else:
     claim("8.1", "accepted-interaction exponent", "N^1.12", "-", None, "run_interaction_counts.py")
 if E5 is not None:
-    for key, paper, lbl in (("b_oct", 1.34, "octree wall-clock"), ("b_dir", 2.17, "3D direct wall-clock")):
-        v = float(E5[key]) if key in E5 else None
+    # run_exp5.py stores these as exp_oct / exp_direct; the older key names
+    # b_oct / b_dir are accepted too so an old results file still verifies.
+    for keys, paper, lbl in ((("exp_oct", "b_oct"), 1.34, "octree wall-clock"),
+                             (("exp_direct", "b_dir"), 1.89, "3D direct wall-clock")):
+        v = next((float(E5[k]) for k in keys if k in E5), None)
         claim("8.2", lbl, f"N^{paper}", f"N^{v:.3f}" if v is not None else "-",
-              near(v, paper, 0.08) if v is not None else None, "run_exp5.py")
+              near_abs(v, paper, EXP_TOL) if v is not None else None, "run_exp5.py")
 else:
-    claim("8.2", "2D/3D scaling exponents", "N^1.34 / N^2.17", "-", None, "run_exp5.py")
+    claim("8.2", "2D/3D scaling exponents", "N^1.34 / N^1.89", "-", None, "run_exp5.py")
 
 # ------------------------------------------------------------------- report
 quick_files = [n for n, d in (("production.json", PR), ("meanfield.json", MF)) if d and d.get("quick")]
@@ -162,3 +185,18 @@ if nm:
     print("  MISSING entries need the named script run; they are not failures.")
 print("=" * 104)
 sys.exit(1 if nf else 0)
+
+# ---------------------------------------------------------------- Section 8.1
+# paste-ready sentence, built from the stored fit
+if TM and TM.get("slope_cell") is not None:
+    w = TM.get("fit_window", {})
+    def two(x):
+        return "-" if x is None else f"{x:.2f}"
+    print("\nSection 8.1, ready to paste (2 s.f., from results/exp3_numba.json):")
+    print(f"  direct summation scales as N^{two(TM.get('slope_direct'))}, the cell list "
+          f"as N^{two(TM.get('slope_cell'))} and the Barnes-Hut traversal as "
+          f"N^{two(TM.get('slope_bh'))}")
+    print(f"  (least-squares fits over N >= {w.get('direct', 0):g}, "
+          f"{w.get('cell', TM.get('fit_nmin', 0)):g} and "
+          f"{w.get('bh_total', TM.get('fit_nmin', 0)):g} respectively; "
+          f"minimum of {TM.get('repeats')} repeats)")

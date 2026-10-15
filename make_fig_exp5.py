@@ -112,8 +112,6 @@ if bd > bo:
                xy=(0.985, 0.06), xycoords="axes fraction", ha="right",
                fontsize=9.5, color=GREY)
 
-fig.suptitle("Experiment 5: two- versus three-dimensional dynamics "
-             "and 3D cost scaling", fontsize=13)
 fig.savefig(os.path.join(FIGURES, "fig13_dim.pdf"))
 fig.savefig(os.path.join(FIGURES, "fig13_dim.png"), dpi=160)
 print("saved fig13_dim.pdf / .png")

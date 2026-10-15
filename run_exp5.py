@@ -36,17 +36,25 @@ def make3(N, seed=0):
     L = (N / DENSITY3) ** (1.0 / 3.0)
     return np.random.default_rng(seed).random((N, 3)) * L, L
 
+REPEATS = 3
+
+def best(fn, reps=REPEATS):
+    """Minimum over `reps` timings, after one warm-up call.  A single timing
+    made the fitted exponent of the direct backend the noisiest number in the
+    benchmark (it moved between N^1.99 and N^2.17 from run to run)."""
+    fn()
+    return min(_timed(fn) for _ in range(reps))
+
+def _timed(fn):
+    t0 = time.perf_counter(); fn(); return time.perf_counter() - t0
+
 tim = {"oct": {}, "direct": {}}
 for N3 in [500, 1000, 2000, 4000]:
     X, L = make3(N3)
-    long_range_octree(X, L, eps_l, reg, theta)
-    t0 = time.time(); long_range_octree(X, L, eps_l, reg, theta)
-    tim["oct"][N3] = time.time() - t0
-    if N3 <= 4000:
-        t0 = time.time(); long_range_direct3d(X, L, eps_l, reg)
-        tim["direct"][N3] = time.time() - t0
+    tim["oct"][N3] = best(lambda: long_range_octree(X, L, eps_l, reg, theta))
+    tim["direct"][N3] = best(lambda: long_range_direct3d(X, L, eps_l, reg))
     print(f"3D N={N3}: octree {tim['oct'][N3]*1e3:.1f} ms, "
-          f"direct {tim['direct'].get(N3, float('nan'))*1e3:.1f} ms", flush=True)
+          f"direct {tim['direct'][N3]*1e3:.1f} ms", flush=True)
 
 Noct = np.array(sorted(tim["oct"])); Toct = np.array([tim["oct"][n] for n in Noct])
 bo = np.polyfit(np.log(Noct), np.log(Toct), 1)[0]
@@ -59,9 +67,11 @@ np.savez(os.path.join(RESULTS, "exp5.npz"),
          rate2=out[2]["rate"], X2=out[2]["X"],
          t3=out[3]["t"], Rc3=out[3]["Rc"], Rcf3=out[3]["Rcf"], clust3=out[3]["clust"],
          rate3=out[3]["rate"], X3=out[3]["X"],
-         Noct=Noct, Toct=Toct, Nd=Nd, Td=Td, exp_oct=bo, exp_direct=bd)
+         Noct=Noct, Toct=Toct, Nd=Nd, Td=Td, exp_oct=bo, exp_direct=bd,
+         repeats=REPEATS, estimator="min over repeats")
 import json as _json
 _json.dump({"oct_exp": float(bo), "direct_exp": float(bd),
+            "repeats": REPEATS, "estimator": "min over repeats",
             "N_oct": [int(n) for n in Noct], "T_oct": [float(t) for t in Toct],
             "N_direct": [int(n) for n in Nd], "T_direct": [float(t) for t in Td],
             "migration_rate_2d": float(out[2]["rate"]),
